@@ -345,50 +345,10 @@
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx-3cuzwpMBSdLX4geBJMZ2DSOxjAI0uCmOuBz5WC6_7I1EEyM-uhS2HeGCq7C6eq6j/exec';
 
 // ============================================================
-// YOUR CLASS SCHEDULE
+// SCHEDULE — fetched from backend on load
 // ============================================================
 
-const SCHEDULE = [
-  { day: 'Monday',    time: '4:30 AM', className: 'Hyrox' },
-  { day: 'Monday',    time: '5:30 AM', className: 'CrossFit' },
-  { day: 'Monday',    time: '7:00 AM', className: 'CrossFit' },
-  { day: 'Monday',    time: '8:15 AM', className: 'CrossFit' },
-  { day: 'Monday',    time: '9:30 AM', className: 'Hyrox' },
-  { day: 'Monday',    time: '4:05 PM', className: 'CrossFit' },
-  { day: 'Monday',    time: '5:10 PM', className: 'Hyrox' },
-  { day: 'Monday',    time: '6:15 PM', className: 'CrossFit' },
-  { day: 'Tuesday',   time: '4:30 AM', className: 'Hyrox' },
-  { day: 'Tuesday',   time: '5:30 AM', className: 'CrossFit' },
-  { day: 'Tuesday',   time: '7:00 AM', className: 'CrossFit' },
-  { day: 'Tuesday',   time: '8:15 AM', className: 'CrossFit' },
-  { day: 'Tuesday',   time: '9:30 AM', className: 'Strength House' },
-  { day: 'Tuesday',   time: '4:05 PM', className: 'CrossFit' },
-  { day: 'Tuesday',   time: '5:10 PM', className: 'Hyrox' },
-  { day: 'Tuesday',   time: '6:15 PM', className: 'Strength House' },
-  { day: 'Wednesday', time: '5:30 AM', className: 'CrossFit' },
-  { day: 'Wednesday', time: '7:00 AM', className: 'CrossFit' },
-  { day: 'Wednesday', time: '8:15 AM', className: 'CrossFit' },
-  { day: 'Wednesday', time: '9:30 AM', className: 'Hyrox' },
-  { day: 'Wednesday', time: '4:05 PM', className: 'CrossFit' },
-  { day: 'Wednesday', time: '5:10 PM', className: 'Hyrox' },
-  { day: 'Wednesday', time: '6:15 PM', className: 'CrossFit' },
-  { day: 'Thursday',  time: '4:30 AM', className: 'Hyrox' },
-  { day: 'Thursday',  time: '5:30 AM', className: 'CrossFit' },
-  { day: 'Thursday',  time: '7:00 AM', className: 'CrossFit' },
-  { day: 'Thursday',  time: '8:15 AM', className: 'CrossFit' },
-  { day: 'Thursday',  time: '9:30 AM', className: 'Strength House' },
-  { day: 'Thursday',  time: '4:05 PM', className: 'CrossFit' },
-  { day: 'Thursday',  time: '5:10 PM', className: 'Hyrox' },
-  { day: 'Thursday',  time: '6:15 PM', className: 'Strength House' },
-  { day: 'Friday',    time: '5:30 AM', className: 'CrossFit' },
-  { day: 'Friday',    time: '7:00 AM', className: 'CrossFit' },
-  { day: 'Friday',    time: '8:15 AM', className: 'CrossFit' },
-  { day: 'Friday',    time: '9:30 AM', className: 'Hyrox' },
-  { day: 'Friday',    time: '4:05 PM', className: 'CrossFit' },
-  { day: 'Friday',    time: '5:10 PM', className: 'Hyrox' },
-  { day: 'Saturday',  time: '8:00 AM', className: 'CrossFit' },
-  { day: 'Saturday',  time: '9:15 AM', className: 'CrossFit' },
-];
+let SCHEDULE = [];
 
 const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -510,6 +470,19 @@ function applyPreviousPicks(slots) {
 // BACKEND
 // ============================================================
 
+async function fetchSchedule() {
+  try {
+    const url = BACKEND_URL + '?action=schedule';
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const json = await res.json();
+    if (json.ok && Array.isArray(json.schedule)) return json.schedule;
+    return [];
+  } catch (err) {
+    console.warn('Could not fetch schedule:', err);
+    return [];
+  }
+}
+
 async function fetchExisting(email) {
   try {
     const url = BACKEND_URL + '?email=' + encodeURIComponent(email);
@@ -613,6 +586,19 @@ async function init() {
   userName = (params.get('name') || '').trim();
 
   if (!userEmail) {
+    showState('no-params');
+    return;
+  }
+
+  // Fetch the schedule from the backend (Class Template tab is the source of truth)
+  SCHEDULE = await fetchSchedule();
+  if (SCHEDULE.length === 0) {
+    document.getElementById('state-no-params').innerHTML = `
+      <div class="error-box">
+        <h2>Schedule unavailable</h2>
+        <p>Couldn't load the class schedule. The Class Template tab in the spreadsheet may be empty, or the backend isn't responding. Contact your gym manager.</p>
+      </div>
+    `;
     showState('no-params');
     return;
   }
