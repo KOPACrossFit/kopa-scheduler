@@ -141,6 +141,17 @@
   .slot-class { font-size: 11px; color: var(--muted); margin-left: auto; font-weight: 500; }
   .slot.checked .slot-class { color: white; }
 
+  /* CLEAR ALL BUTTON */
+  .clear-btn {
+    width: 100%; background: white; color: var(--ink);
+    border: 2px solid var(--ink); padding: 10px;
+    font-family: 'Barlow Condensed';
+    font-weight: 700; font-size: 13px; letter-spacing: 0.05em;
+    text-transform: uppercase; cursor: pointer;
+    margin-top: 16px; margin-bottom: 16px;
+  }
+  .clear-btn:active { transform: translate(2px, 2px); background: var(--paper-2); }
+
   /* SUBMIT BAR (sticky bottom) */
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
@@ -283,11 +294,11 @@
   <div class="greeting" id="greetingName">Hey coach 💪</div>
   <div class="greeting-email" id="greetingEmail"></div>
 
-  <div class="returning-note" id="returningNote" style="display: none;">
-    ✓ We found your previous submission and pre-filled your picks. Change anything below and resubmit.
-  </div>
+  <div class="returning-note" id="returningNote" style="display: none;"></div>
 
   <div id="scheduleContainer"><!-- slots injected here --></div>
+
+  <button class="clear-btn" id="clearBtn">↺ Clear all selections</button>
 </div>
 
 <!-- SUBMITTING STATE -->
@@ -618,7 +629,14 @@ async function init() {
   const existing = await fetchExisting(userEmail);
   if (existing && existing.slots && Object.keys(existing.slots).length > 0) {
     applyPreviousPicks(existing.slots);
-    document.getElementById('returningNote').style.display = 'block';
+    const note = document.getElementById('returningNote');
+    if (existing.source === 'lastweek') {
+      note.textContent = '↻ Pre-filled from last week. Adjust anything below and resubmit.';
+      note.style.display = 'block';
+    } else {
+      note.textContent = '✓ We found your current submission. Change anything below and resubmit.';
+      note.style.display = 'block';
+    }
     if (!userName && existing.name) {
       userName = existing.name;
       const fn = userName.split(' ')[0] || 'coach';
@@ -631,6 +649,16 @@ async function init() {
 
   // Wire up edit button
   document.getElementById('editBtn').addEventListener('click', () => showState('form'));
+
+  // Wire up clear all button
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (selectedSlots.size === 0) return;
+    if (!confirm('Clear all selections?')) return;
+    selectedSlots.clear();
+    document.querySelectorAll('.slot.checked').forEach(el => el.classList.remove('checked'));
+    updateCounts();
+    document.getElementById('returningNote').style.display = 'none';
+  });
 
   showState('form');
 }
