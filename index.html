@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOPA CrossFit — Coach Availability</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #ffffff;
+    --paper-2: #fafafa;
+    --accent: #ee5a24;
+    --accent-deep: #c94315;
+    --accent-soft: #fff1ec;
+    --good: #2d7a3f;
+    --good-soft: #ecf6ee;
+    --muted: #6b6b6b;
+    --line: #e6e6e6;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  body { padding-bottom: 100px; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 16px 40px; }
+
+  /* HEADER */
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; border-bottom: 3px solid var(--ink);
+    margin-bottom: 20px;
+  }
+  .brand-text { font-family: 'Barlow Condensed'; line-height: 0.95; }
+  .brand-text .name {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+  .brand-text .name strong { color: var(--accent); }
+  .brand-text .tag {
+    font-family: 'Inter'; font-size: 8px; font-weight: 600;
+    letter-spacing: 0.18em; color: var(--muted);
+    text-transform: uppercase; margin-top: 2px;
+  }
+  .badge {
+    font-family: 'JetBrains Mono'; font-size: 10px;
+    background: var(--accent); color: white;
+    padding: 5px 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  h1 {
+    font-family: 'Barlow Condensed';
+    font-size: 42px; font-weight: 900; letter-spacing: -0.01em;
+    margin: 0 0 2px; line-height: 1; text-transform: uppercase;
+  }
+  h1 .accent { color: var(--accent); }
+  .sub {
+    font-family: 'JetBrains Mono'; font-size: 11px;
+    color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* STATES */
+  .state { display: none; animation: fadeIn 0.3s ease; }
+  .state.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* LOADING STATE */
+  .loading-box {
+    background: white; border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--accent);
+    padding: 40px 20px; text-align: center;
+  }
+  .spinner {
+    display: inline-block; width: 32px; height: 32px;
+    border: 3px solid var(--line); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* NO-PARAMS ERROR */
+  .error-box {
+    background: white; border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--accent);
+    padding: 24px 20px; text-align: center;
+  }
+  .error-box h2 {
+    font-family: 'Barlow Condensed'; font-size: 28px;
+    margin: 0 0 8px; text-transform: uppercase;
+  }
+  .error-box p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+
+  /* COACH FORM */
+  .greeting {
+    font-family: 'Barlow Condensed';
+    font-size: 26px; font-weight: 800;
+    margin: 0 0 4px; text-transform: uppercase;
+  }
+  .greeting-email {
+    font-family: 'JetBrains Mono'; font-size: 11px;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  .returning-note {
+    background: var(--good-soft); border-left: 4px solid var(--good);
+    padding: 10px 12px; margin-bottom: 16px;
+    font-size: 13px; color: var(--good);
+    font-family: 'JetBrains Mono'; letter-spacing: 0.02em;
+  }
+
+  .day-block { margin-bottom: 22px; }
+  .day-label {
+    font-family: 'Barlow Condensed'; font-size: 16px; font-weight: 800;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    padding-bottom: 6px; border-bottom: 2px solid var(--ink);
+    margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .day-label .day-count {
+    font-family: 'JetBrains Mono'; color: var(--muted);
+    font-weight: 400; font-size: 11px;
+  }
+  .slot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .slot {
+    border: 2px solid var(--ink); padding: 10px 8px;
+    cursor: pointer; transition: all 0.1s; user-select: none;
+    display: flex; align-items: center; gap: 8px;
+    background: white;
+  }
+  .slot:active { transform: scale(0.97); }
+  .slot.checked { background: var(--accent); color: white; }
+  .slot .check {
+    width: 14px; height: 14px; border: 2px solid var(--ink);
+    background: white; flex-shrink: 0; position: relative;
+  }
+  .slot.checked .check { border-color: white; }
+  .slot.checked .check::after {
+    content: '✓'; position: absolute; top: -7px; left: 0;
+    font-weight: 800; font-size: 16px; color: white;
+  }
+  .slot-time { font-family: 'JetBrains Mono'; font-size: 12px; font-weight: 700; }
+  .slot-class { font-size: 11px; color: var(--muted); margin-left: auto; font-weight: 500; }
+  .slot.checked .slot-class { color: white; }
+
+  /* SUBMIT BAR (sticky bottom) */
+  .submit-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--paper);
+    border-top: 3px solid var(--ink);
+    padding: 12px 16px;
+    display: flex; gap: 10px; align-items: center;
+    z-index: 10;
+  }
+  .submit-count {
+    font-family: 'Barlow Condensed'; font-weight: 800;
+    font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); white-space: nowrap;
+  }
+  .submit-count strong { color: var(--accent); font-size: 20px; }
+  .submit-btn {
+    flex: 1; background: var(--accent); color: white;
+    border: 2px solid var(--ink); padding: 12px;
+    font-family: 'Barlow Condensed';
+    font-weight: 800; font-size: 16px; letter-spacing: 0.05em;
+    text-transform: uppercase; cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: all 0.1s;
+  }
+  .submit-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+  .submit-btn:disabled {
+    background: var(--line); cursor: not-allowed;
+    box-shadow: 4px 4px 0 var(--muted);
+  }
+
+  /* SUCCESS STATE */
+  .success-box {
+    background: white; border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--accent);
+    padding: 24px 20px; text-align: center;
+    margin-bottom: 16px;
+  }
+  .success-icon {
+    width: 60px; height: 60px; margin: 0 auto 16px;
+    background: var(--good); color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800;
+  }
+  .success-title {
+    font-family: 'Barlow Condensed'; font-size: 32px;
+    font-weight: 900; margin: 0 0 8px; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .success-sub {
+    font-size: 14px; color: var(--muted);
+    margin: 0 0 8px;
+  }
+
+  .picks-summary {
+    background: white; border: 2px solid var(--ink); padding: 16px;
+    margin-bottom: 16px;
+  }
+  .picks-summary h3 {
+    font-family: 'Barlow Condensed';
+    margin: 0 0 12px;
+    font-size: 18px; text-transform: uppercase;
+    border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+  }
+  .picks-summary .empty {
+    color: var(--muted); font-style: italic; font-size: 14px;
+  }
+  .pick-day {
+    margin-bottom: 14px;
+  }
+  .pick-day-name {
+    font-family: 'Barlow Condensed'; font-weight: 700;
+    font-size: 14px; text-transform: uppercase;
+    color: var(--accent-deep); margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+  .pick-item {
+    font-family: 'JetBrains Mono'; font-size: 13px;
+    padding: 3px 0; color: var(--ink);
+  }
+
+  .edit-btn {
+    width: 100%; background: white; color: var(--ink);
+    border: 2px solid var(--ink); padding: 14px;
+    font-family: 'Barlow Condensed';
+    font-weight: 800; font-size: 15px; letter-spacing: 0.05em;
+    text-transform: uppercase; cursor: pointer;
+  }
+  .edit-btn:active { transform: translate(2px, 2px); }
+
+  /* ERROR TOAST */
+  .toast {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #d63333; color: white;
+    padding: 12px 20px; font-size: 14px;
+    font-family: 'Inter'; font-weight: 600;
+    border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+    z-index: 100; transition: transform 0.3s;
+    max-width: 90%; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="topbar">
+  <div class="brand-text">
+    <div class="name"><strong>KOPA</strong> CrossFit</div>
+    <div class="tag">Coach Scheduler</div>
+  </div>
+  <div class="badge" id="weekBadge">LOADING</div>
+</header>
+
+<!-- LOADING STATE -->
+<div class="state active" id="state-loading">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">
+      Loading your form...
+    </div>
+  </div>
+</div>
+
+<!-- NO PARAMS ERROR -->
+<div class="state" id="state-no-params">
+  <div class="error-box">
+    <h2>Missing link info</h2>
+    <p>This form should be opened from the link sent to your coaching email.</p>
+    <p>Check your inbox for the most recent message from KOPA CrossFit.</p>
+  </div>
+</div>
+
+<!-- MAIN FORM -->
+<div class="state" id="state-form">
+  <h1>Week of <span class="accent" id="weekDate">—</span></h1>
+  <div class="sub">Tap any slot you can cover</div>
+
+  <div class="greeting" id="greetingName">Hey coach 💪</div>
+  <div class="greeting-email" id="greetingEmail"></div>
+
+  <div class="returning-note" id="returningNote" style="display: none;">
+    ✓ We found your previous submission and pre-filled your picks. Change anything below and resubmit.
+  </div>
+
+  <div id="scheduleContainer"><!-- slots injected here --></div>
+</div>
+
+<!-- SUBMITTING STATE -->
+<div class="state" id="state-submitting">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">
+      Submitting your availability...
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS STATE -->
+<div class="state" id="state-success">
+  <div class="success-box">
+    <div class="success-icon">✓</div>
+    <div class="success-title">You're locked in</div>
+    <div class="success-sub">Thanks, <span id="successName">coach</span>. Your availability was saved.</div>
+  </div>
+
+  <div class="picks-summary">
+    <h3>You signed up for:</h3>
+    <div id="picksList"></div>
+  </div>
+
+  <button class="edit-btn" id="editBtn">← Change my picks</button>
+</div>
+
+</div>
+
+<!-- STICKY SUBMIT BAR -->
+<div class="submit-bar" id="submitBar" style="display: none;">
+  <div class="submit-count"><strong id="submitCount">0</strong>&nbsp;slots</div>
+  <button class="submit-btn" id="submitBtn">Submit availability →</button>
+</div>
+
+<div class="toast" id="toast">Error message</div>
+
+<script>
+// ============================================================
+// CONFIG — paste your Apps Script web app URL here
+// ============================================================
+
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx-3cuzwpMBSdLX4geBJMZ2DSOxjAI0uCmOuBz5WC6_7I1EEyM-uhS2HeGCq7C6eq6j/exec';
+
+// ============================================================
+// YOUR CLASS SCHEDULE
+// ============================================================
+
+const SCHEDULE = [
+  { day: 'Monday',    time: '4:30 AM', className: 'Hyrox' },
+  { day: 'Monday',    time: '5:30 AM', className: 'CrossFit' },
+  { day: 'Monday',    time: '7:00 AM', className: 'CrossFit' },
+  { day: 'Monday',    time: '8:15 AM', className: 'CrossFit' },
+  { day: 'Monday',    time: '9:30 AM', className: 'Hyrox' },
+  { day: 'Monday',    time: '4:05 PM', className: 'CrossFit' },
+  { day: 'Monday',    time: '5:10 PM', className: 'Hyrox' },
+  { day: 'Monday',    time: '6:15 PM', className: 'CrossFit' },
+  { day: 'Tuesday',   time: '4:30 AM', className: 'Hyrox' },
+  { day: 'Tuesday',   time: '5:30 AM', className: 'CrossFit' },
+  { day: 'Tuesday',   time: '7:00 AM', className: 'CrossFit' },
+  { day: 'Tuesday',   time: '8:15 AM', className: 'CrossFit' },
+  { day: 'Tuesday',   time: '9:30 AM', className: 'Strength House' },
+  { day: 'Tuesday',   time: '4:05 PM', className: 'CrossFit' },
+  { day: 'Tuesday',   time: '5:10 PM', className: 'Hyrox' },
+  { day: 'Tuesday',   time: '6:15 PM', className: 'Strength House' },
+  { day: 'Wednesday', time: '5:30 AM', className: 'CrossFit' },
+  { day: 'Wednesday', time: '7:00 AM', className: 'CrossFit' },
+  { day: 'Wednesday', time: '8:15 AM', className: 'CrossFit' },
+  { day: 'Wednesday', time: '9:30 AM', className: 'Hyrox' },
+  { day: 'Wednesday', time: '4:05 PM', className: 'CrossFit' },
+  { day: 'Wednesday', time: '5:10 PM', className: 'Hyrox' },
+  { day: 'Wednesday', time: '6:15 PM', className: 'CrossFit' },
+  { day: 'Thursday',  time: '4:30 AM', className: 'Hyrox' },
+  { day: 'Thursday',  time: '5:30 AM', className: 'CrossFit' },
+  { day: 'Thursday',  time: '7:00 AM', className: 'CrossFit' },
+  { day: 'Thursday',  time: '8:15 AM', className: 'CrossFit' },
+  { day: 'Thursday',  time: '9:30 AM', className: 'Strength House' },
+  { day: 'Thursday',  time: '4:05 PM', className: 'CrossFit' },
+  { day: 'Thursday',  time: '5:10 PM', className: 'Hyrox' },
+  { day: 'Thursday',  time: '6:15 PM', className: 'Strength House' },
+  { day: 'Friday',    time: '5:30 AM', className: 'CrossFit' },
+  { day: 'Friday',    time: '7:00 AM', className: 'CrossFit' },
+  { day: 'Friday',    time: '8:15 AM', className: 'CrossFit' },
+  { day: 'Friday',    time: '9:30 AM', className: 'Hyrox' },
+  { day: 'Friday',    time: '4:05 PM', className: 'CrossFit' },
+  { day: 'Friday',    time: '5:10 PM', className: 'Hyrox' },
+  { day: 'Saturday',  time: '8:00 AM', className: 'CrossFit' },
+  { day: 'Saturday',  time: '9:15 AM', className: 'CrossFit' },
+];
+
+const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+// ============================================================
+// STATE
+// ============================================================
+
+let userName = '';
+let userEmail = '';
+const selectedSlots = new Set(); // slot titles that are checked
+
+// ============================================================
+// INIT
+// ============================================================
+
+function slotTitle(s) {
+  return `${s.day} ${s.time} - ${s.className}`;
+}
+
+function showState(id) {
+  document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+  document.getElementById('state-' + id).classList.add('active');
+  document.getElementById('submitBar').style.display = (id === 'form') ? 'flex' : 'none';
+  window.scrollTo(0, 0);
+}
+
+function setWeekDate() {
+  const today = new Date();
+  const day = today.getDay();
+  const daysUntil = day === 0 ? 1 : (8 - day);
+  const next = new Date(today);
+  next.setDate(today.getDate() + daysUntil);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const str = `${months[next.getMonth()]} ${next.getDate()}`;
+  document.getElementById('weekDate').textContent = str;
+  document.getElementById('weekBadge').textContent = 'WK ' + str.toUpperCase();
+}
+
+function renderSchedule() {
+  const grouped = {};
+  DAY_ORDER.forEach(d => grouped[d] = []);
+  SCHEDULE.forEach(s => {
+    if (!grouped[s.day]) grouped[s.day] = [];
+    grouped[s.day].push(s);
+  });
+
+  const container = document.getElementById('scheduleContainer');
+  container.innerHTML = '';
+
+  DAY_ORDER.forEach(day => {
+    const slots = grouped[day];
+    if (!slots || slots.length === 0) return;
+
+    const block = document.createElement('div');
+    block.className = 'day-block';
+    block.innerHTML = `
+      <div class="day-label">
+        <span>${day}</span>
+        <span class="day-count" data-day="${day}">0 / ${slots.length}</span>
+      </div>
+      <div class="slot-grid"></div>
+    `;
+    const grid = block.querySelector('.slot-grid');
+    slots.forEach(s => {
+      const title = slotTitle(s);
+      const slotEl = document.createElement('div');
+      slotEl.className = 'slot';
+      slotEl.dataset.title = title;
+      slotEl.innerHTML = `
+        <div class="check"></div>
+        <div class="slot-time">${s.time.replace(' AM', 'a').replace(' PM', 'p')}</div>
+        <div class="slot-class">${s.className}</div>
+      `;
+      slotEl.addEventListener('click', () => toggleSlot(slotEl, title));
+      grid.appendChild(slotEl);
+    });
+    container.appendChild(block);
+  });
+}
+
+function toggleSlot(el, title) {
+  if (selectedSlots.has(title)) {
+    selectedSlots.delete(title);
+    el.classList.remove('checked');
+  } else {
+    selectedSlots.add(title);
+    el.classList.add('checked');
+  }
+  updateCounts();
+}
+
+function updateCounts() {
+  document.getElementById('submitCount').textContent = selectedSlots.size;
+  // Per-day counts
+  const byDay = {};
+  selectedSlots.forEach(t => {
+    const day = t.split(' ')[0];
+    byDay[day] = (byDay[day] || 0) + 1;
+  });
+  document.querySelectorAll('[data-day]').forEach(el => {
+    const day = el.dataset.day;
+    const total = el.textContent.split(' / ')[1];
+    el.textContent = `${byDay[day] || 0} / ${total}`;
+  });
+}
+
+function applyPreviousPicks(slots) {
+  Object.keys(slots).forEach(title => {
+    if (slots[title]) {
+      selectedSlots.add(title);
+      const el = document.querySelector(`.slot[data-title="${CSS.escape(title)}"]`);
+      if (el) el.classList.add('checked');
+    }
+  });
+  updateCounts();
+}
+
+// ============================================================
+// BACKEND
+// ============================================================
+
+async function fetchExisting(email) {
+  try {
+    const url = BACKEND_URL + '?email=' + encodeURIComponent(email);
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const json = await res.json();
+    if (json.ok && json.existing) return json.existing;
+    return null;
+  } catch (err) {
+    console.warn('Could not fetch previous response:', err);
+    return null;
+  }
+}
+
+async function submitForm() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  showState('submitting');
+
+  const slots = {};
+  selectedSlots.forEach(t => slots[t] = true);
+
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ name: userName, email: userEmail, slots }),
+      redirect: 'follow',
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Something went wrong.');
+    renderSuccess();
+  } catch (err) {
+    showToast('Error: ' + err.message);
+    btn.disabled = false;
+    showState('form');
+  }
+}
+
+function renderSuccess() {
+  document.getElementById('successName').textContent = userName;
+
+  const byDay = {};
+  selectedSlots.forEach(t => {
+    const day = t.split(' ')[0];
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(t);
+  });
+
+  const list = document.getElementById('picksList');
+  if (selectedSlots.size === 0) {
+    list.innerHTML = '<div class="empty">No slots selected — let us know if this was a mistake.</div>';
+  } else {
+    list.innerHTML = '';
+    DAY_ORDER.forEach(day => {
+      if (!byDay[day]) return;
+      const block = document.createElement('div');
+      block.className = 'pick-day';
+      const items = byDay[day].map(t => {
+        const match = t.match(/^(\w+)\s+([\d:]+ [AP]M)\s+-\s+(.+)$/);
+        if (!match) return `<div class="pick-item">${t}</div>`;
+        return `<div class="pick-item">${match[2]} · ${match[3]}</div>`;
+      }).join('');
+      block.innerHTML = `<div class="pick-day-name">${day}</div>${items}`;
+      list.appendChild(block);
+    });
+  }
+
+  showState('success');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+// ============================================================
+// STARTUP
+// ============================================================
+
+async function init() {
+  setWeekDate();
+
+  // Check backend URL is set
+  if (BACKEND_URL.indexOf('PASTE_YOUR') >= 0) {
+    document.getElementById('state-no-params').innerHTML = `
+      <div class="error-box">
+        <h2>Setup incomplete</h2>
+        <p>The BACKEND_URL hasn't been configured yet. Edit the HTML file and replace PASTE_YOUR_WEB_APP_URL_HERE with your Apps Script web app URL.</p>
+      </div>
+    `;
+    showState('no-params');
+    return;
+  }
+
+  // Parse URL params
+  const params = new URLSearchParams(window.location.search);
+  userEmail = (params.get('email') || '').trim();
+  userName = (params.get('name') || '').trim();
+
+  if (!userEmail) {
+    showState('no-params');
+    return;
+  }
+
+  // Build the schedule
+  renderSchedule();
+
+  // Set greeting
+  const firstName = userName.split(' ')[0] || 'coach';
+  document.getElementById('greetingName').textContent = `Hey ${firstName} 💪`;
+  document.getElementById('greetingEmail').textContent = userEmail;
+
+  // Fetch existing response if any
+  const existing = await fetchExisting(userEmail);
+  if (existing && existing.slots && Object.keys(existing.slots).length > 0) {
+    applyPreviousPicks(existing.slots);
+    document.getElementById('returningNote').style.display = 'block';
+    if (!userName && existing.name) {
+      userName = existing.name;
+      const fn = userName.split(' ')[0] || 'coach';
+      document.getElementById('greetingName').textContent = `Hey ${fn} 💪`;
+    }
+  }
+
+  // Wire up submit button
+  document.getElementById('submitBtn').addEventListener('click', submitForm);
+
+  // Wire up edit button
+  document.getElementById('editBtn').addEventListener('click', () => showState('form'));
+
+  showState('form');
+}
+
+init();
+</script>
+</body>
+</html>
